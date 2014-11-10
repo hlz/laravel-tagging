@@ -6,6 +6,11 @@ Laravel Tag Plugin
 [![License](https://poser.pugx.org/rtconner/laravel-tagging/license.svg)](https://packagist.org/packages/rtconner/laravel-tagging)
 [![Build Status](https://travis-ci.org/rtconner/laravel-tagging.svg?branch=master)](https://travis-ci.org/rtconner/laravel-tagging)
 
+#### This fork solves this issue:
+https://github.com/rtconner/laravel-tagging/issues/9
+
+Unstable for the moment.
+
 This package is not meant to handle javascript or html in any way. This package handles database storage and read/writes only.
 
 There are no real limits on what characters can be used in a tag. It uses a slug transform to determine if two tags are identical ("sugar-free" and "Sugar Free" would be treated as the same tag). Tag display names are run through Str::title()
