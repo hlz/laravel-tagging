@@ -99,8 +99,10 @@ trait TaggableTrait {
 		$tagNames = array_map('\Conner\Tagging\TaggingUtil::slug', $tagNames);
 
 		foreach($tagNames as $tagSlug) {
-			$query->whereHas('tagged', function($q) use($tagSlug) {
-				$q->where('tag_slug', '=', $tagSlug);
+			$query->whereHas('tagged', function($tagged_query) use($tagSlug) {
+				$tagged_query->whereHas('tag', function($tag_query) use($tagSlug) {
+					$tag_query->where('slug', $tagSlug);
+				});
 			});
 		}
 		
@@ -113,6 +115,7 @@ trait TaggableTrait {
 	 * @param $tagNames array|string
 	 */
 	public function scopeWithAnyTag($query, $tagNames) {
+
 		$tagNames = TaggingUtil::makeTagArray($tagNames);
 
 		$normalizer = \Config::get('tagging::normalizer');
@@ -120,8 +123,10 @@ trait TaggableTrait {
 		
 		$tagNames = array_map($normalizer, $tagNames);
 
-		return $query->whereHas('tagged', function($q) use($tagNames) {
-			$q->whereIn('tag_slug', $tagNames);
+		return $query->with('tagged')->whereHas('tagged', function($tagged_query) use($tagNames) {
+			$tagged_query->whereHas('tag', function($tag_query) use($tagNames) {
+				$tag_query->whereIn('slug', $tagNames);
+			});
 		});
 	}
 	
