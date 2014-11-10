@@ -7,7 +7,12 @@ class Tagged extends \Eloquent {
 
 	protected $table = 'tagging_tagged';
 	public $timestamps = false;
-	protected $fillable = ['tag_name', 'tag_slug'];
+	// protected $fillable = ['tag_name', 'tag_slug'];
+	protected $fillable = ['tag_id'];
+
+	function tag() {
+		return $this->belongsTo('Conner\Tagging\Tag');
+	}
 
 	public function taggable() {
 		return $this->morphTo();

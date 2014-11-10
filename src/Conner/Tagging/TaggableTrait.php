@@ -36,11 +36,12 @@ trait TaggableTrait {
 	 * @return array
 	 */
 	public function tagNames() {
+
 		$tagNames = array();
-		$tagged = $this->tagged()->get(array('tag_name'));
+		$tagged = $this->tagged()->with('tag')->get(array('tag_id'));
 
 		foreach($tagged as $tagged) {
-			$tagNames[] = $tagged->tag_name;
+			$tagNames[] = $tagged->tag->name;
 		}
 		
 		return $tagNames;
@@ -130,18 +131,33 @@ trait TaggableTrait {
 	 * @param $tagName string
 	 */
 	private function addTag($tagName) {
+		
 		$tagName = trim($tagName);
 		$tagSlug = TaggingUtil::slug($tagName);
-		
-		$previousCount = $this->tagged()->where('tag_slug', '=', $tagSlug)->take(1)->count();
-		if($previousCount >= 1) { return; }
 		
 		$displayer = \Config::get('tagging::displayer');
 		$displayer = empty($displayer) ? '\Str::title' : $displayer;
 		
+		// relate tag with tagged
+		$tag = Tag::where('slug', '=', $tagSlug)->first();
+
+		if( ! $tag) {
+			$tag = new Tag;
+			$tag->name = call_user_func($displayer, $tagName);
+			$tag->slug = $tagSlug;
+			$tag->suggest = false;
+			$tag->save();
+		}
+
+		// this can be optimized because we know if tag is new or not
+		$previousCount = $this->tagged()->where('tag_id', '=', $tag->id)->take(1)->count();
+		
+		if($previousCount >= 1) {
+			return;
+		}
+		
 		$tagged = new Tagged(array(
-			'tag_name'=>call_user_func($displayer, $tagName),
-			'tag_slug'=>$tagSlug,
+			'tag_id' => $tag->id
 		));
 		
 		$this->tagged()->save($tagged);
@@ -155,6 +171,7 @@ trait TaggableTrait {
 	 * @param $tagName string
 	 */
 	private function removeTag($tagName) {
+
 		$tagName = trim($tagName);
 		
 		$normalizer = \Config::get('tagging::normalizer');
@@ -162,7 +179,13 @@ trait TaggableTrait {
 		
 		$tagSlug = call_user_func($normalizer, $tagName);
 		
-		if($count = $this->tagged()->where('tag_slug', '=', $tagSlug)->delete()) {
+		$tag = Tag::where('slug', '=', $tagSlug)->first();
+
+		if( ! $tag) {
+			return;
+		}
+
+		if($count = $this->tagged()->where('tag_id', '=', $tag->id)->delete()) {
 			TaggingUtil::decrementCount($tagName, $tagSlug, $count);
 		}
 	}
